@@ -4,9 +4,7 @@ trigger:
       - main
   paths:
     include:
-      - htmlapp/**
-      - htmlapp-deployment.yaml
-      - htmlapp-service.yaml
+      - htmlapp/**       # ✅ Only trigger when files under htmlapp/ folder change
 
 pool:
   vmImage: ubuntu-latest
@@ -15,7 +13,6 @@ variables:
   ACR_NAME: myacrramraja
   AKS_CLUSTER: myAKSCluster
   RESOURCE_GROUP: myDevOpsRG
-  IMAGE_NAME: htmlapp
 
 stages:
 - stage: Deploy
@@ -27,19 +24,13 @@ stages:
 
     - task: AzureCLI@2
       inputs:
-        azureSubscription: 'my-azure-connection'  # ✅ Your Azure service connection name
+        azureSubscription: 'my-azure-connection'
         scriptType: 'bash'
         scriptLocation: 'inlineScript'
         inlineScript: |
           echo "📥 Getting AKS credentials..."
           az aks get-credentials --resource-group $(RESOURCE_GROUP) --name $(AKS_CLUSTER) --overwrite-existing
 
-          echo "🔁 Preparing Deployment YAML with Build ID as Image Tag..."
-          IMAGE_TAG=$(Build.BuildId)
-          FULL_IMAGE=$(ACR_NAME).azurecr.io/$(IMAGE_NAME):$IMAGE_TAG
-          
-          sed "s|htmlapp:latest|$FULL_IMAGE|g" htmlapp-deployment.yaml > htmlapp-deployment-temp.yaml
-
-          echo "🚀 Applying Kubernetes Deployment and Service..."
-          kubectl apply -f htmlapp-deployment-temp.yaml
+          echo "🚀 Deploying HTML App to AKS..."
+          kubectl apply -f htmlapp-deployment.yaml
           kubectl apply -f htmlapp-service.yaml
