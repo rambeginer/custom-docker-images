@@ -1,0 +1,33 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  ACR_NAME: myacrramraja
+  AKS_CLUSTER: myAKSCluster
+  RESOURCE_GROUP: myDevOpsRG
+
+stages:
+- stage: Deploy
+  jobs:
+  - job: DeployToAKS
+    displayName: 'Deploy HTML App to AKS'
+    steps:
+    - checkout: self
+
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'my-azure-connection'  # ✅ your service connection
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "📥 Getting AKS credentials..."
+          az aks get-credentials --resource-group $(RESOURCE_GROUP) --name $(AKS_CLUSTER) --overwrite-existing
+
+          echo "🚀 Deploying HTML App to AKS..."
+          kubectl apply -f htmlapp-deployment.yaml
+          kubectl apply -f htmlapp-service.yaml
