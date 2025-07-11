@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginxproxy-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginxproxy
+  template:
+    metadata:
+      labels:
+        app: nginxproxy
+    spec:
+      containers:
+      - name: nginxproxy
+        image: myacrramraja.azurecr.io/nginxproxy:1.0
+        ports:
+        - containerPort: 80
