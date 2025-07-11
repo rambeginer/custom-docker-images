@@ -4,7 +4,10 @@ trigger:
       - main
   paths:
     include:
-      - htmlapp/**       # ✅ Only trigger when files under htmlapp/ folder change
+      - htmlapp/**
+      - pythonapp/**
+      - nginxproxy/**
+      - healthcheck/**
 
 pool:
   vmImage: ubuntu-latest
@@ -18,7 +21,7 @@ stages:
 - stage: Deploy
   jobs:
   - job: DeployToAKS
-    displayName: 'Deploy HTML App to AKS'
+    displayName: 'Deploy All Apps to AKS'
     steps:
     - checkout: self
 
@@ -31,6 +34,18 @@ stages:
           echo "📥 Getting AKS credentials..."
           az aks get-credentials --resource-group $(RESOURCE_GROUP) --name $(AKS_CLUSTER) --overwrite-existing
 
-          echo "🚀 Deploying HTML App to AKS..."
+          echo "🚀 Deploying HTML App..."
           kubectl apply -f htmlapp-deployment.yaml
           kubectl apply -f htmlapp-service.yaml
+
+          echo "🚀 Deploying Python App..."
+          kubectl apply -f pythonapp/pythonapp-deployment.yaml
+          kubectl apply -f pythonapp/pythonapp-service.yaml
+
+          echo "🚀 Deploying NGINX Proxy..."
+          kubectl apply -f nginxproxy/nginxproxy-deployment.yaml
+          kubectl apply -f nginxproxy/nginxproxy-service.yaml
+
+          echo "🚀 Deploying HealthCheck App..."
+          kubectl apply -f healthcheck/healthcheck-deployment.yaml
+          kubectl apply -f healthcheck/healthcheck-service.yaml
