@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: htmlapp-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: htmlapp
+  template:
+    metadata:
+      labels:
+        app: htmlapp
+    spec:
+      containers:
+      - name: htmlapp
+        image: myacrramraja.azurecr.io/htmlapp:1.0
+        ports:
+        - containerPort: 80
