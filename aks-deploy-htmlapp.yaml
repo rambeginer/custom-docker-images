@@ -1,24 +1,57 @@
-- task: AzureCLI@2
-  inputs:
-    azureSubscription: 'my-azure-connection'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      echo "📥 Getting AKS credentials..."
-      az aks get-credentials --resource-group $(RESOURCE_GROUP) --name $(AKS_CLUSTER) --overwrite-existing
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - htmlapp/**
+      - pythonapp/**
+      - nodeapp/**
+      - nginxproxy/**
+      - healthcheck/**
 
-      echo "🚀 Deploying HTML App to AKS..."
-      kubectl apply -f htmlapp-deployment.yaml
-      kubectl apply -f htmlapp-service.yaml
+pool:
+  vmImage: ubuntu-latest
 
-      echo "🐍 Deploying Python App..."
-      kubectl apply -f pythonapp/pythonapp-deployment.yaml
-      kubectl apply -f pythonapp/pythonapp-service.yaml
+variables:
+  ACR_NAME: myacrramraja
+  AKS_CLUSTER: myAKSCluster
+  RESOURCE_GROUP: myDevOpsRG
 
-      echo "🧩 Deploying Nginx Proxy..."
-      kubectl apply -f nginxproxy/nginxproxy-deployment.yaml
-      kubectl apply -f nginxproxy/nginxproxy-service.yaml
+stages:
+- stage: Deploy
+  jobs:
+  - job: DeployToAKS
+    displayName: 'Deploy All Apps to AKS'
+    steps:
+    - checkout: self
 
-      echo "❤️ Deploying Healthcheck App..."
-      kubectl apply -f healthcheck/healthcheck-deployment.yaml
-      kubectl apply -f healthcheck/healthcheck-service.yaml
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'my-azure-connection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "📥 Getting AKS credentials..."
+          az aks get-credentials --resource-group $(RESOURCE_GROUP) --name $(AKS_CLUSTER) --overwrite-existing
+
+          echo "🚀 Deploying HTML App..."
+          kubectl apply -f htmlapp/htmlapp-deployment.yaml
+          kubectl apply -f htmlapp/htmlapp-service.yaml
+
+          echo "🚀 Deploying Python App..."
+          kubectl apply -f pythonapp/pythonapp-deployment.yaml
+          kubectl apply -f pythonapp/pythonapp-service.yaml
+
+          echo "🚀 Deploying NGINX Proxy..."
+          kubectl apply -f nginxproxy/nginxproxy-deployment.yaml
+          kubectl apply -f nginxproxy/nginxproxy-service.yaml
+
+          echo "🚀 Deploying Healthcheck App..."
+          kubectl apply -f healthcheck/healthcheck-deployment.yaml
+          kubectl apply -f healthcheck/healthcheck-service.yaml
+
+          # Optional Node app deployment
+          echo "🚀 (Optional) Deploying Node App..."
+          kubectl apply -f nodeapp/nodeapp-deployment.yaml || echo "❌ Skipping Node App - files not found"
+          kubectl apply -f nodeapp/nodeapp-service.yaml || echo "❌ Skipping Node App Service - files not found"
